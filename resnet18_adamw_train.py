@@ -18,7 +18,6 @@ def train(config):
     model_config = ResNetConfig()
     model = ResNet(model_config).to(device)
     model = torch.compile(model)
-    model.eval()
 
     optimizer = optim.AdamW(model.parameters(), lr=config.lr, betas=config.betas)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, config.t_max)
@@ -60,7 +59,7 @@ if __name__ == "__main__":
         trainloader=trainloader,
         testloader=testloader,
         epochs=150,
-        lr=0.2
+        lr=1e-4
     )
 
     accs = []
