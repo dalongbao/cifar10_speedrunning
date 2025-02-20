@@ -1,19 +1,21 @@
 import torch
-import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset
 
+import os
 import time
-import math
-import numpy as np
-import tqdm
+import uuid
+from tqdm import tqdm
 
-from model_1 import ResNet34, ResNetConfig, TrainingConfig
-from utils import get_data, eval
+from model_1 import ResNet, ResNetConfig, TrainingConfig
+from utils import get_data, get_device, eval
+
 
 def train(config):
-    model = ResNet34().to("cuda")
+    device = get_device()
+
+    model_config = ResNetConfig()
+    model = ResNet(model_config).to(device)
     model = torch.compile(model)
     model.eval()
 
@@ -27,32 +29,37 @@ def train(config):
     for epoch in it:
         model.train()
 
-        for X, y in train_dataloader:
+        for X, y in config.trainloader:
+            X, y = X.to(device), y.to(device)
             pred = model(X)
-            loss = F.cross_entropy(pred, y)
+            loss = F.cross_entropy(pred, y, reduction='none')
             train_loss.append(loss.mean().item())
             train_acc.append((pred.detach().argmax(1) == y).float().mean().item())
-            loss.backward()
-            optimizer.zero_grad()
+
+            optimizer.zero_grad(set_to_none=True)
+            loss.sum().backward()
             optimizer.step()
             scheduler.step()
+
             it.set_description('Training loss=%.4f acc=%.4f' % (train_loss[-1], train_acc[-1]))
 
-        test_acc.append(eval(model, test_loader))
+        test_loss, epoch_test_acc = eval(model, config.testloader)
+        test_acc.append(epoch_test_acc)
         print('acc: %.4f' % test_acc[-1])
 
     duration = time.time() - start 
     log = dict(train_loss=train_loss, train_acc=train_acc, test_acc=test_acc, time=duration)
     return model, log
 
+
 if __name__ == "__main__":
     trainloader, testloader = get_data()
 
     config = TrainingConfig(
-        trainloader = trainloader,
-        testloader = testloader,
-        epochs = 150,
-        lr = 0.2
+        trainloader=trainloader,
+        testloader=testloader,
+        epochs=150,
+        lr=0.2
     )
 
     accs = []
@@ -60,5 +67,14 @@ if __name__ == "__main__":
         model, log = train(config)
         acc = log['test_acc'][-1]
         accs.append(acc)
-
     print(accs)
+
+    # yoinked directly from keller jordan
+    log = dict(config=config, accs=accs)
+    log_dir = os.path.join('logs', str(uuid.uuid4()))
+    os.makedirs(log_dir, exist_ok=True)
+    log_path = os.path.join(log_dir, 'log.pt')
+    print(os.path.abspath(log_path))
+    torch.save(log, os.path.join(log_dir, 'log.pt'))
+
+
