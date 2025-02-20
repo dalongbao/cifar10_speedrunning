@@ -169,3 +169,10 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Datasets and Checkpoints
+data
+/data
+data/
+*.gz
+*.pt

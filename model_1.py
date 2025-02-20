@@ -85,7 +85,7 @@ class ResNet(nn.Module):
     def forward(self, x):
         x = self.conv1(x)
         x = self.resblocks(x)
-        x = F.avg_pool2d(x, 4)
+        x = F.adaptive_avg_pool2d(x, (1, 1))
         x = torch.flatten(x, 1)
         x = self.fc(x)
         return x

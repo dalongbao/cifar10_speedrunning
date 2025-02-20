@@ -13,6 +13,7 @@ from utils import get_data, get_device, eval
 
 def train(config):
     device = get_device()
+    print(f"using device: {device}")
 
     model_config = ResNetConfig()
     model = ResNet(model_config).to(device)
