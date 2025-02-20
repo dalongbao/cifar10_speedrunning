@@ -62,12 +62,19 @@ if __name__ == "__main__":
         lr=1e-4
     )
 
-    accs = []
+    accs, logs = [], []
     for _ in range(5):
         model, log = train(config)
         acc = log['test_acc'][-1]
         accs.append(acc)
-    print(accs)
+        logs.append(log)
+
+    print(logs)
+
+    # loaders aren't serializable
+    config_dict = config.__dict__.copy()
+    config_dict.pop('trainloader', None)
+    config_dict.pop('testloader', None)
 
     # yoinked directly from keller jordan
     log = dict(config=config, accs=accs)

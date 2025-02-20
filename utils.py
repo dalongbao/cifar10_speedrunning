@@ -39,15 +39,11 @@ def get_data(
         transform=test_transform
     )
 
-    g = torch.Generator()
-    g.manual_seed(8008135)
-
     trainloader = torch.utils.data.DataLoader(
         trainset, 
         batch_size=batch_size,
         shuffle=True, 
         num_workers=num_workers,
-        generator=g,
         pin_memory=True,
         persistent_workers=True if num_workers > 0 else False
     )
@@ -57,7 +53,6 @@ def get_data(
         batch_size=batch_size,
         shuffle=False, 
         num_workers=num_workers,
-        generator=g,
         pin_memory=True,
         persistent_workers=True if num_workers > 0 else False
     )
