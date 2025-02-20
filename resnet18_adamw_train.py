@@ -7,7 +7,7 @@ import time
 import uuid
 from tqdm import tqdm
 
-from model_1 import ResNet, ResNetConfig, TrainingConfig
+from model import ResNet, ResNetConfig, TrainingConfig
 from utils import get_data, get_device, eval
 
 
