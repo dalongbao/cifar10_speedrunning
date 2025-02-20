@@ -44,9 +44,9 @@ def train(config):
 
             it.set_description('Training loss=%.4f acc=%.4f' % (train_loss[-1], train_acc[-1]))
 
-        test_loss, epoch_test_acc = eval(model, config.testloader)
-        test_acc.append(epoch_test_acc)
-        print('acc: %.4f' % test_acc[-1])
+    test_loss, epoch_test_acc = eval(model, config.testloader)
+    test_acc.append(epoch_test_acc)
+    print('acc: %.4f' % test_acc[-1])
 
     duration = time.time() - start 
     log = dict(train_loss=train_loss, train_acc=train_acc, test_acc=test_acc, time=duration)
