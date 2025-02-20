@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Tuple, List
 
 @dataclass
@@ -16,12 +16,12 @@ class ResLayerConfig:
 class ResNetConfig: # defaults to ResNet18
     num_blocks: int = 18
     num_classes: int = 10
-    blocks: List[ResLayerConfig] = [
+    blocks: List[ResLayerConfig] = field(default_factory=lambda: [
         ResLayerConfig(64, 2, 1),
         ResLayerConfig(128, 2, 2),
         ResLayerConfig(256, 2, 2),
         ResLayerConfig(512, 2, 2)
-    ]
+    ])
 
 
 @dataclass
