@@ -34,6 +34,7 @@ class TrainingConfig:
     betas: Tuple[float, float] = (0.9, 0.999)
     t_max: int = 20000
     momentum: float = 0.9
+    device: str = "cuda"
 
 
 class ResBlock(nn.Module):

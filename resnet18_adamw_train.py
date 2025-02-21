@@ -12,8 +12,7 @@ from utils import get_data, get_device, eval
 
 
 def train(config):
-    device = get_device()
-    print(f"using device: {device}")
+    device = config.device
 
     model_config = ResNetConfig()
     model = ResNet(model_config).to(device)
@@ -54,12 +53,16 @@ def train(config):
 
 if __name__ == "__main__":
     trainloader, testloader = get_data()
+    device = get_device()
+
+    print(f"using device {device}")
 
     config = TrainingConfig(
         trainloader=trainloader,
         testloader=testloader,
         epochs=150,
-        lr=1e-4
+        lr=1e-4,
+        device=device
     )
 
     accs, logs = [], []
@@ -69,19 +72,17 @@ if __name__ == "__main__":
         accs.append(acc)
         logs.append(log)
 
-    print(logs)
+    for log in logs:
+        print(log.time)
 
-    # loaders aren't serializable
-    config_dict = config.__dict__.copy()
-    config_dict.pop('trainloader', None)
-    config_dict.pop('testloader', None)
-
-    # yoinked directly from keller jordan
-    log = dict(config=config, accs=accs)
-    log_dir = os.path.join('logs', str(uuid.uuid4()))
-    os.makedirs(log_dir, exist_ok=True)
-    log_path = os.path.join(log_dir, 'log.pt')
-    print(os.path.abspath(log_path))
-    torch.save(log, os.path.join(log_dir, 'log.pt'))
-
-
+    # # loaders aren't serializable
+    # config_dict = config.__dict__.copy()
+    # config_dict.pop('trainloader', None)
+    # config_dict.pop('testloader', None)
+    #
+    # # yoinked directly from keller jordan
+    # log_dir = os.path.join('logs', str(uuid.uuid4()))
+    # os.makedirs(log_dir, exist_ok=True)
+    # log_path = os.path.join(log_dir, 'log.pt')
+    # print(os.path.abspath(log_path))
+    # torch.save(log, os.path.join(log_dir, 'log.pt'))
