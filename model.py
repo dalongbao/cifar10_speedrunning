@@ -14,10 +14,9 @@ class ResLayerConfig:
 
 @dataclass
 class ResNetConfig: # defaults to ResNet18
-    num_blocks: int = 18
     num_classes: int = 10
     blocks: List[ResLayerConfig] = field(default_factory=lambda: [
-        ResLayerConfig(64, 2, 1),
+        ResLayerConfig(64, 2, 1), # num_channels, num_layers, stride
         ResLayerConfig(128, 2, 2),
         ResLayerConfig(256, 2, 2),
         ResLayerConfig(512, 2, 2)
@@ -63,7 +62,6 @@ class ResNet(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.num_classes = config.num_classes
-        self.num_blocks = config.num_blocks
         self.in_dim = config.blocks[0].num_channels
         self.out_dim = config.blocks[-1].num_channels
 
