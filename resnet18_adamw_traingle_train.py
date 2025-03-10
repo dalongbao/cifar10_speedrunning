@@ -8,7 +8,7 @@ import uuid
 from tqdm import tqdm
 
 from model import ResNet, ResNetConfig, TrainingConfig
-from utils import get_data, get_device, eval
+from utils import get_data, get_device, eval, triangle
 
 
 def train(config):
@@ -18,8 +18,14 @@ def train(config):
     model = ResNet(model_config).to(device)
     model = torch.compile(model)
 
+
+    total_train_steps = config.epochs * config.trainloader.batch_size
+    lr_schedule = np.interp(np.arange(1+total_train_steps),
+                            [0, int(0.1 * total_train_steps), total_train_steps],
+                            [0.2, 1, 0]) # Triangular learning rate schedule
+
     optimizer = optim.AdamW(model.parameters(), lr=config.lr, betas=config.betas)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, config.t_max)
+    scheduler = optim.lr_scheduler.LamdaLR(optimizer, lr_schedule)
 
     train_loss, train_acc, test_acc = [], [], [torch.nan]
 
@@ -75,14 +81,15 @@ if __name__ == "__main__":
     for log in logs:
         print(log.time)
 
-    # # loaders aren't serializable
-    # config_dict = config.__dict__.copy()
-    # config_dict.pop('trainloader', None)
-    # config_dict.pop('testloader', None)
-    #
-    # # yoinked directly from keller jordan
-    # log_dir = os.path.join('logs', str(uuid.uuid4()))
-    # os.makedirs(log_dir, exist_ok=True)
-    # log_path = os.path.join(log_dir, 'log.pt')
-    # print(os.path.abspath(log_path))
-    # torch.save(log, os.path.join(log_dir, 'log.pt'))
+    # loaders aren't serializable
+    config_dict = config.__dict__.copy()
+    config_dict.pop('trainloader', None)
+    config_dict.pop('testloader', None)
+    print(config_dict)
+
+    # yoinked directly from keller jordan
+    log_dir = os.path.join('logs', str(uuid.uuid4()))
+    os.makedirs(log_dir, exist_ok=True)
+    log_path = os.path.join(log_dir, 'log.pt')
+    print(os.path.abspath(log_path))
+    torch.save(log, os.path.join(log_dir, 'log.pt'))
