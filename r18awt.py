@@ -2,13 +2,15 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 
+import numpy as np
+
 import os
 import time
 import uuid
 from tqdm import tqdm
 
 from model import ResNet, ResNetConfig, TrainingConfig
-from utils import get_data, get_device, eval, triangle
+from utils import get_data, get_device, eval
 
 
 def train(config):
@@ -25,7 +27,7 @@ def train(config):
                             [0.2, 1, 0]) # Triangular learning rate schedule
 
     optimizer = optim.AdamW(model.parameters(), lr=config.lr, betas=config.betas)
-    scheduler = optim.lr_scheduler.LamdaLR(optimizer, lr_schedule)
+    scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_schedule.__getitem__)
 
     train_loss, train_acc, test_acc = [], [], [torch.nan]
 
@@ -79,7 +81,7 @@ if __name__ == "__main__":
         logs.append(log)
 
     for log in logs:
-        print(log.time)
+        print(log[time])
 
     # loaders aren't serializable
     config_dict = config.__dict__.copy()
@@ -87,9 +89,13 @@ if __name__ == "__main__":
     config_dict.pop('testloader', None)
     print(config_dict)
 
+    with open("lazysave.json", "w") as f:
+        f.writelines(config_dict)
+        f.writelines(logs)
+
     # yoinked directly from keller jordan
-    log_dir = os.path.join('logs', str(uuid.uuid4()))
-    os.makedirs(log_dir, exist_ok=True)
-    log_path = os.path.join(log_dir, 'log.pt')
-    print(os.path.abspath(log_path))
-    torch.save(log, os.path.join(log_dir, 'log.pt'))
+    # log_dir = os.path.join('logs', str(uuid.uuid4()))
+    # os.makedirs(log_dir, exist_ok=True)
+    # log_path = os.path.join(log_dir, 'log.pt')
+    # print(os.path.abspath(log_path))
+    # torch.save(log, os.path.join(log_dir, 'log.pt'))
