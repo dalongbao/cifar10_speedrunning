@@ -55,7 +55,7 @@ def train(config):
     print('acc: %.4f' % test_acc[-1])
 
     duration = time.time() - start 
-    log = dict(train_loss=train_loss, train_acc=train_acc, test_acc=test_acc, time=duration)
+    log = dict(train_loss=train_loss, train_acc=train_acc, test_acc=test_acc, duration=duration)
     return model, log
 
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
         logs.append(log)
 
     for log in logs:
-        print(log[time])
+        print(log[duration])
 
     # loaders aren't serializable
     config_dict = config.__dict__.copy()
