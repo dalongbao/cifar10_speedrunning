@@ -68,8 +68,8 @@ if __name__ == "__main__":
     config = TrainingConfig(
         trainloader=trainloader,
         testloader=testloader,
-        epochs=150,
-        lr=1e-4,
+        epochs=12,
+        lr=2e-2,
         device=device
     )
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
         logs.append(log)
 
     for log in logs:
-        print(log[duration])
+        print(log["duration"])
 
     # loaders aren't serializable
     config_dict = config.__dict__.copy()
