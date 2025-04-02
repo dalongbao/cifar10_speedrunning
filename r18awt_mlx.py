@@ -18,7 +18,6 @@ from utils_mlx import triangular_lr_scheduler, get_cifar10, loss_fn, eval, one_h
 def train(config):
     model_config = ResNetConfig()
     model = ResNet(model_config)
-    model.eval()
 
     trainloader, testloader = get_cifar10(config.batch_size)
     total_train_steps = config.epochs * config.batch_size
@@ -28,26 +27,22 @@ def train(config):
     train_loss, train_acc, test_acc = [], [], [0]
 
     start = time.time()
-    it = tqdm(range(config.epochs))
-    for epoch in it:
-
+    # it = tqdm(range(config.epochs))
+    for epoch in range(config.epochs):
         state = [model.state, optimizer.state]
-
-            (loss, acc), grads = nn.value_and_grad(model, loss_fn)(model, X, y)
-            optimizer.update(model, grads)
-
-
 
         for batch_counter, batch in enumerate(trainloader): 
             X = mx.array(batch["image"])
             y = mx.array(batch["label"])
 
-            loss, acc = step(X, y)
+            (loss, acc), grads = nn.value_and_grad(model, loss_fn)(model, X, y)
+            optimizer.update(model, grads)
 
             train_loss.append(loss.item())
             train_acc.append(acc.item())
 
-            it.set_postfix(loss=loss.item(), acc=acc.item())
+            # it.set_description(f"train_loss={train_loss[-1]:.4f} train_acc={train_acc[-1]:.4f}")
+        print(f"epoch={epoch} train_loss={train_loss[-1]:.4f} train_acc={train_acc[-1]:.4f}")
 
     test_loss, epoch_test_acc = eval(model, testloader)
     test_acc.append(epoch_test_acc)
