@@ -44,7 +44,7 @@ def eval_fn(model, X, y):
     return mx.mean(mx.argmax(model(X), axis=1) == y)
 
 
-def get_cifar10(batch_size, root=None): # yoinked from CIFAR10 example
+def get_cifar10(batch_size, root=None):
     tr = load_cifar10(root=root)
 
     mean = np.array([0.485, 0.456, 0.406]).reshape((1, 1, 3))
@@ -59,23 +59,26 @@ def get_cifar10(batch_size, root=None): # yoinked from CIFAR10 example
     tr_iter = (
         tr.shuffle()
         .partition_if(group.size() > 1, group.size(), group.rank())
+        .to_stream()
         .image_random_h_flip("image", prob=0.5)
         .pad("image", 0, 4, 4, 0.0)
         .pad("image", 1, 4, 4, 0.0)
         .image_random_crop("image", 32, 32)
         .key_transform("image", normalize)
         .batch(batch_size)
+        .prefetch(4, 4)
     )
 
     test = load_cifar10(root=root, train=False)
     test_iter = (
-        test
+        test.to_stream()
         .partition_if(group.size() > 1, group.size(), group.rank())
         .key_transform("image", normalize)
         .batch(batch_size)
     )
 
     return tr_iter, test_iter
+
 
 
 def eval(model, testloader):
@@ -92,8 +95,7 @@ def eval(model, testloader):
         total_loss += loss.item() * y.shape(0)
         total_acc += (pred.argmax(1) == y).float().sum().item()
         total_samples += y.shape(0)
-        print(batch)
-        print(total_samples, total_loss, total_acc)
+        # print(total_samples, total_loss, total_acc)
 
     return total_loss / total_samples, total_acc / total_samples
 

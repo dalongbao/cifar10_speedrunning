@@ -2,6 +2,7 @@ import mlx
 import mlx.core as mx
 import mlx.optimizers as optim
 import mlx.nn as nn
+from mlx.data.datasets import load_cifar10
 
 import numpy as np
 
@@ -9,6 +10,7 @@ import os
 import time
 import uuid
 from tqdm import tqdm
+from functools import partial
 
 from model_mlx import ResNet, ResNetConfig, TrainingConfig
 from utils_mlx import triangular_lr_scheduler, get_cifar10, loss_fn, eval, one_hot
@@ -16,7 +18,6 @@ from utils_mlx import triangular_lr_scheduler, get_cifar10, loss_fn, eval, one_h
 def train(config):
     model_config = ResNetConfig()
     model = ResNet(model_config)
-   # model = mx.compile(model)  # Compile the model here
 
     trainloader, testloader = get_cifar10(config.batch_size)
 
@@ -26,11 +27,12 @@ def train(config):
 
     state = [model.state, optimizer.state]
 
-    def step(model, X, y):
+    @partial(mx.compile, inputs=state, outputs=state)
+    def step(X, y):
         value_and_grad_fn = nn.value_and_grad(model, loss_fn)
         (loss, acc), grads = value_and_grad_fn(model, X, y)
+        grads = nn.utils.average_gradients(grads)
         optimizer.update(model, grads)
-        mx.eval(loss, acc, state)
         return loss, acc
 
     train_loss, train_acc, test_acc = [], [], [0]
@@ -41,7 +43,8 @@ def train(config):
         for batch_counter, batch in enumerate(trainloader): 
             X = mx.array(batch["image"])
             y = mx.array(batch["label"])
-            loss, acc = step(model, X, y)
+            loss, acc = step(X, y)
+            mx.eval(loss, acc, state)
             train_loss.append(loss.item())
             train_acc.append(acc.item())
         it.set_description(f"loss={train_loss[-1]:.4f} | acc: {train_acc[-1]:.4f}")
