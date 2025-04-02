@@ -18,33 +18,36 @@ from utils_mlx import triangular_lr_scheduler, get_cifar10, loss_fn, eval, one_h
 def train(config):
     model_config = ResNetConfig()
     model = ResNet(model_config)
+    model.eval()
 
     trainloader, testloader = get_cifar10(config.batch_size)
     total_train_steps = config.epochs * config.batch_size
-    optimizer = optim.AdamW(learning_rate=config.lr, betas=config.betas)
     scheduler = config.scheduler
+    optimizer = optim.AdamW(learning_rate=scheduler, betas=config.betas)
 
     train_loss, train_acc, test_acc = [], [], [0]
 
     start = time.time()
     it = tqdm(range(config.epochs))
     for epoch in it:
+
         state = [model.state, optimizer.state]
-        @partial(mx.compile, inputs=state, outputs=state)
-        def step(X, y):
-            value_and_grad_fn = nn.value_and_grad(model, loss_fn)
-            (loss, acc), grads = value_and_grad_fn(model, X, y)
+
+            (loss, acc), grads = nn.value_and_grad(model, loss_fn)(model, X, y)
             optimizer.update(model, grads)
-            return loss, acc
+
+
 
         for batch_counter, batch in enumerate(trainloader): 
             X = mx.array(batch["image"])
             y = mx.array(batch["label"])
+
             loss, acc = step(X, y)
+
             train_loss.append(loss.item())
             train_acc.append(acc.item())
 
-        it.set_description(f"loss={train_loss[-1]:.4f} | acc: {train_acc[-1]:.4f}")
+            it.set_postfix(loss=loss.item(), acc=acc.item())
 
     test_loss, epoch_test_acc = eval(model, testloader)
     test_acc.append(epoch_test_acc)
@@ -60,7 +63,8 @@ if __name__ == "__main__":
             batch_size = 128,
             epochs = 70 
     )
-    config.scheduler = config._get_scheduler_config("triangular", (0.2, 0, 1, 20000, 0.4))
+    #config.scheduler = config._get_scheduler_config("triangular", (0.2, 0, 1, 20000, 0.4))
+    config.scheduler = config._get_scheduler_config("cosine", (0.2, config.batch_size * config.epochs, 0))
 
     world = mx.distributed.init()
     if world.size() > 1:
