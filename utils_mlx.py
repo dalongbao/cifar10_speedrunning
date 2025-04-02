@@ -1,6 +1,7 @@
 import mlx
 import mlx.core as mx
 import mlx.optimizers as optim
+import mlx.nn as nn
 from mlx.data.datasets import load_cifar10
 
 import time
@@ -24,10 +25,19 @@ def triangular_lr_scheduler(
 
     return schedule
 
+def one_hot(x, num_classes):
+    batch_size = x.shape[0]
+    arr = mx.zeros((batch_size, num_classes))
+    for i in range(batch_size):
+        arr[i, x[i]] = 1
+    return arr
+
 
 def loss_fn(model, X, y):
     pred = model(X)
-    return pred, mx.mean(nn.losses.cross_entropy(pred, y))
+    loss = mx.mean(nn.losses.cross_entropy(pred, y))
+    acc = mx.mean(mx.argmax(pred, axis=1) == y)
+    return loss, acc
 
 
 def eval_fn(model, X, y):
@@ -49,31 +59,21 @@ def get_cifar10(batch_size, root=None): # yoinked from CIFAR10 example
     tr_iter = (
         tr.shuffle()
         .partition_if(group.size() > 1, group.size(), group.rank())
-        .to_stream()
         .image_random_h_flip("image", prob=0.5)
         .pad("image", 0, 4, 4, 0.0)
         .pad("image", 1, 4, 4, 0.0)
         .image_random_crop("image", 32, 32)
         .key_transform("image", normalize)
         .batch(batch_size)
-        .prefetch(4, 4)
     )
 
     test = load_cifar10(root=root, train=False)
     test_iter = (
-        test.to_stream()
+        test
         .partition_if(group.size() > 1, group.size(), group.rank())
         .key_transform("image", normalize)
         .batch(batch_size)
     )
-
-    for train_batch in tr_iter:
-        train_batch["image"] = mx.array(train_batch["image"])
-        train_batch["label"] = mx.array(train_batch["label"])
-
-    for test_batch in test_iter:
-        test_batch["image"] = mx.array(test_batch["image"])
-        test_batch["label"] = mx.array(test_batch["label"])
 
     return tr_iter, test_iter
 
@@ -84,8 +84,8 @@ def eval(model, testloader):
     total_samples = 1
 
     for batch_count, batch in enumerate(testloader):
-        X = batch["image"]
-        y = batch["label"]
+        X = mx.array(batch["image"])
+        y = mx.array(batch["label"])
         pred = model(X)
 
         loss = nn.losses.cross_entropy(pred, y)

@@ -138,7 +138,7 @@ class ResNet(nn.Module):
     def __call__(self, x):
         x = self.conv1(x)
         x = self.resblocks(x)
-        x = self.pool(x, (1, 1))
+        x = self.pool(x)
         x = mx.flatten(x, 1)
         x = self.fc(x)
         return x
