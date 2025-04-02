@@ -91,10 +91,10 @@ def eval(model, testloader):
         y = mx.array(batch["label"])
         pred = model(X)
 
-        loss = nn.losses.cross_entropy(pred, y)
-        total_loss += loss.item() * y.shape(0)
-        total_acc += (pred.argmax(1) == y).float().sum().item()
-        total_samples += y.shape(0)
+        loss = mx.mean(nn.losses.cross_entropy(pred, y))
+        total_loss += loss.item() * y.shape[0]
+        total_acc += mx.sum(mx.argmax(pred, axis=1) == y).item() 
+        total_samples += y.shape[0]
         # print(total_samples, total_loss, total_acc)
 
     return total_loss / total_samples, total_acc / total_samples

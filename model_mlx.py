@@ -1,6 +1,7 @@
 import mlx
 import mlx.nn as nn
 import mlx.core as mx
+import mlx.optimizers as optim
 from dataclasses import dataclass, field
 from typing import Tuple, List, Optional
 
